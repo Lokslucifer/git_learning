@@ -2,20 +2,16 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"large_fss/internals/constants"
 	v1_handler "large_fss/internals/handlers/v1"
 	middlewares "large_fss/internals/middleware"
 	"large_fss/internals/repository"
 	"large_fss/internals/services"
 	"large_fss/internals/storage"
-	// "path/filepath"
-
-	"fmt"
 	"log"
 
-	// "time"
 	"github.com/aws/aws-sdk-go-v2/config"
-
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
@@ -82,7 +78,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to create JWT service: %v", err)
 	}
-	
+
 	mainservice := services.NewService(jwtservice, postgres, filestorage)
 	go mainservice.CleanupService()
 
