@@ -14,6 +14,15 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./initdb:/docker-entrypoint-initdb.d  # 👈 Mount init script directory
+  app:
+    build: .
+    container_name: go-app
+    ports:
+      - "8081:8081"
+    depends_on:
+      - db
+    environment:
+      PORT: 8081
 
 volumes:
   pgdata:
