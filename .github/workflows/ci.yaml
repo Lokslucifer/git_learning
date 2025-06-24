@@ -36,6 +36,6 @@ jobs:
         # SSH into EC2 and restart Docker Compose
         ssh -i key.pem -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST << EOF
           cd /home/$EC2_USER/app
-          docker compose down
-          docker compose up -d --build
+          docker-compose down
+          docker-compose up -d --build
         EOF
