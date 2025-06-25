@@ -7,6 +7,8 @@ const ENDPOINTS = {
     CANCEL: `${BACKEND_BASE}/auth/transfer/cancel`,
     LOGIN: `${BACKEND_BASE}/login`,
     SIGNUP: `${BACKEND_BASE}/signup`,
+    LOGOUT: `${BACKEND_BASE}/logout`,
+    AUTH_STATUS: `${BACKEND_BASE}/auth/status`,
 };
 
 // Global state
@@ -23,13 +25,36 @@ let isPaused = false;
 let uploadInProgress = false;
 
 // Initialize
-document.addEventListener('DOMContentLoaded', () => {
-    if (authToken) {
+document.addEventListener('DOMContentLoaded', async () => {
+    const isLogin = await getAuthenticationStatus();
+    if (isLogin) {
         showUploadCard();
     } else {
         showAboutCard();
     }
 });
+
+async function getAuthenticationStatus() {
+    try {
+        const response = await fetch(ENDPOINTS.AUTH_STATUS, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (response.ok) {
+            return true;
+        } else if (response.status === 401) {
+            return false;
+        } else {
+            const data = await response.json();
+            throw new Error(data.error?.message || 'Authentication failed');
+        }
+    } catch (error) {
+        console.error('Error checking authentication:', error);
+        return false;
+    }
+}
+
 
 // Authentication functions
 function switchAuthMode(mode) {
@@ -73,8 +98,7 @@ async function handleLogin(event) {
         const data = await response.json();
         
         if (response.ok) {
-            authToken = data.Token || data.ID;
-            localStorage.setItem('auth_token', authToken);
+       
             showToast('success', 'Logged in successfully!');
             setTimeout(() => showUploadCard(), 1000);
         } else {
@@ -98,6 +122,7 @@ async function handleSignup(event) {
 
     if(password.length<10){
         showToast("error","Minimum Password length should be 10")
+        return 
     }
     
     // Example body object
@@ -119,8 +144,6 @@ async function handleSignup(event) {
         const data = await response.json();
         
         if (response.ok) {
-            authToken = data.Token || data.ID;
-            localStorage.setItem('auth_token', authToken);
             showToast('success', 'Account Created successfully!');
             setTimeout(() => showUploadCard(), 1000);
         } else {
@@ -132,10 +155,24 @@ async function handleSignup(event) {
 }
 
 
-function logout() {
-    authToken = null;
-    localStorage.removeItem('auth_token');
-    showAboutCard();
+async function logout() {
+     try {
+        const response = await fetch(ENDPOINTS.LOGOUT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await response.json();
+        
+        if (response.ok) {
+             showAboutCard();
+        } else {
+            throw new Error(data.error?.message || 'Logout failed');
+        }
+    } catch (error) {
+        showToast('error', error.message);
+    }
+   
 }
 function showAboutCard(){
     document.getElementById('about-card').classList.remove('hidden');
@@ -315,7 +352,6 @@ async function startTransfer() {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${authToken}`
             },
             body: JSON.stringify({ expiry, message, size: totalSize })
         });
@@ -375,7 +411,6 @@ async function uploadFiles() {
         try {
             const response = await fetch(ENDPOINTS.UPLOAD_CHUNK, {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${authToken}` },
                 body: formData
             });
 
@@ -407,7 +442,6 @@ async function finalizeTransfer() {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${authToken}`
             },
             body: JSON.stringify({ id: transferId })
         });
@@ -448,7 +482,6 @@ async function cancelTransfer() {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${authToken}`
                 },
                 body: JSON.stringify({ transfer_id: transferId })
             });

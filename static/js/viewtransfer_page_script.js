@@ -1,5 +1,19 @@
 
+
+
+
 const BACKEND_BASE = 'http://localhost:8081/api';
+const ENDPOINTS = {
+
+    LOGOUT: `${BACKEND_BASE}/logout`,
+    AUTH_STATUS: `${BACKEND_BASE}/auth/status`,
+    FILE_DOWNLOAD_BACKEND_URL:`${BACKEND_BASE}/transfer/download/file`,
+    TRANSFER_DOWNLOAD_BACKEND_URL:`${BACKEND_BASE}/transfer/download/transfer`,
+    ALLTRANSFER:`${BACKEND_BASE}/auth/transfer/all`,
+    UPDATETRANSFER:`${BACKEND_BASE}/auth/transfer/update`,
+    DELETETRANSFER:`${BACKEND_BASE}/auth/transfer/delete`
+};
+
 let transfers = [];
 let filteredTransfers = [];
 let currentEditingId = null;
@@ -15,9 +29,25 @@ function checkAuth() {
 }
 
 // Logout function
-function logout() {
-    localStorage.removeItem('auth_token');
-    window.location.href = '/';
+async function logout() {
+    try {
+        const response = await fetch(ENDPOINTS.LOGOUT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await response.json();
+        
+        if (response.ok) {
+            window.location.href = '/';
+        } else {
+            throw new Error(data.error?.message || 'Logout failed');
+        }
+    } catch (error) {
+        showToast(error.message,'error');
+    }
+
+    
 }
 
 // Format file size
@@ -50,14 +80,14 @@ function getTransferStatus(createdAt, expiry) {
 
 // Load transfers from backend
 async function loadTransfers() {
-    const token = checkAuth();
-    if (!token) return;
+
 
     try {
-        const response = await fetch(`${BACKEND_BASE}/auth/transfer/all`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+        const response = await fetch(ENDPOINTS.ALLTRANSFER, {
+            
+            headers: { 'Content-Type': 'application/json' }
+
+            
         });
         console.log(response,"-response")
 
@@ -87,7 +117,10 @@ async function loadTransfers() {
 
 function FindExpiry(expiryTimeStr) {
     // Ensure expiryTime is in milliseconds
-    const expiryTime = new Date(expiryTimeStr).getTime(); 
+    const expiryTime = new Date(expiryTimeStr).getTime();
+    if(expiryTime==0){
+        return "Never"
+    }
     if (expiryTime < 1e12) expiryTime *= 1000;
     if (expiryTime < Date.now()) return 'Expired';
     console.log("expiryTime-",expiryTime)
@@ -128,6 +161,14 @@ function displayTransfers() {
     grid.innerHTML = filteredTransfers.map(transfer => {
         const status = getTransferStatus(transfer.created_at, transfer.expiry);
         // const shareUrl = `/share/${transferId}`;
+        // <div class="info-item">
+        //     <div class="info-label">Downloads</div>
+        //     <div class="info-value">${transfer.download_count} times</div>
+        // </div>
+    //         <div class="info-item">
+    //     <div class="info-label">Files</div>
+    //     <div class="info-value">0 files</div>
+    // </div>
         const shareLink = `${window.location.origin}/share/${transfer.id}`;
         
         return `
@@ -150,15 +191,7 @@ function displayTransfers() {
                     <div class="info-item">
                         <div class="info-label">Size</div>
                         <div class="info-value">${formatFileSize(transfer.size)}</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">Files</div>
-                        <div class="info-value">0 files</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">Downloads</div>
-                        <div class="info-value">${transfer.download_count} times</div>
-                    </div>
+                    </div>          
                     <div class="info-item">
                         <div class="info-label">Expires</div>
                         <div class="info-value">${FindExpiry(transfer.expiry)}</div>
@@ -187,7 +220,6 @@ function displayTransfers() {
 // Filter transfers
 function filterTransfers() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-    const statusFilter = document.getElementById('statusFilter').value;
     const dateFilter = document.getElementById('dateFilter').value;
 
     filteredTransfers = transfers.filter(transfer => {
@@ -195,10 +227,6 @@ function filterTransfers() {
         const matchesSearch = !searchTerm || 
             transfer.message.toLowerCase().includes(searchTerm) ||
             transfer.id.toLowerCase().includes(searchTerm);
-
-        // Status filter
-        const transferStatus = getTransferStatus(transfer.created_at, transfer.expiry);
-        const matchesStatus = !statusFilter || transferStatus === statusFilter;
 
         // Date filter
         let matchesDate = true;
@@ -221,7 +249,7 @@ function filterTransfers() {
             }
         }
 
-        return matchesSearch && matchesStatus && matchesDate;
+        return matchesSearch && matchesDate;
     });
 
     displayTransfers();
@@ -236,15 +264,14 @@ function copyShareLink(link) {
 
 // Download transfer
 async function downloadTransfer(transferId) {
-    const token = checkAuth();
-    if (!token) return;
+
 
     try {
         // In a real implementation, this would download the actual files
         showToast('Download started for transfer #' + transferId);
         
         // Simulate download
-        window.open(`${BACKEND_BASE}/transfer/download/transfer/${transferId}`, '_blank');
+        window.open(`${ENDPOINTS.TRANSFER_DOWNLOAD_BACKEND_URL}/${transferId}`, '_blank');
     } catch (error) {
         showToast('Download failed: ' + error.message, 'error');
     }
@@ -272,8 +299,7 @@ document.getElementById('editForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!currentEditingId) return;
 
-    const token = checkAuth();
-    if (!token) return;
+
 
     const formData = {
         "transfer_id":currentEditingId,
@@ -283,11 +309,10 @@ document.getElementById('editForm').addEventListener('submit', async (e) => {
     console.log(formData)
 
     try {
-        const response = await fetch(`${BACKEND_BASE}/auth/transfer/update`, {
+        const response = await fetch(ENDPOINTS.UPDATETRANSFER, {
             method: 'PUT',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify(formData)
         });
@@ -302,6 +327,7 @@ document.getElementById('editForm').addEventListener('submit', async (e) => {
             
             showToast('Transfer updated successfully!');
             closeEditModal();
+            loadTransfers();
         } else {
             throw new Error('Failed to update transfer');
         }
@@ -316,14 +342,11 @@ async function deleteTransfer(transferId) {
         return;
     }
 
-    const token = checkAuth();
-    if (!token) return;
-
     try {
-        const response = await fetch(`${BACKEND_BASE}/auth/transfer/delete/${transferId}`, {
+        const response = await fetch(`${ENDPOINTS.DELETETRANSFER}/${transferId}`, {
             method: 'DELETE',
             headers: {
-                'Authorization': `Bearer ${token}`
+                'Content-Type': 'application/json',
             }
         });
 
@@ -365,7 +388,7 @@ function showToast(message, type = 'success') {
 
 // Event listeners
 document.getElementById('searchInput').addEventListener('input', filterTransfers);
-document.getElementById('statusFilter').addEventListener('change', filterTransfers);
+// document.getElementById('statusFilter').addEventListener('change', filterTransfers);
 document.getElementById('dateFilter').addEventListener('change', filterTransfers);
 
 // Close modal when clicking outside

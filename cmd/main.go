@@ -10,6 +10,7 @@ import (
 	"large_fss/internals/services"
 	"large_fss/internals/storage"
 	"log"
+	"net/http"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -103,6 +104,7 @@ func main() {
 	backend := r.Group("/api")
 	backend.POST("/login", handler.LoginHandler)   //checked
 	backend.POST("/signup", handler.SignupHandler) //checked
+	backend.POST("/logout", handler.LogoutHandler)
 	publicTransferGroup := backend.Group("/transfer")
 	publicTransferGroup.GET("/share/:transferid", handler.GetTransferInfoHandler)
 	publicTransferGroup.GET("/download/file/:fileid", handler.FileDownloaderHandler)
@@ -112,6 +114,12 @@ func main() {
 	protected.Use(middlewares.AuthorizationMiddleware(mainservice.JwtService))
 
 	{
+		protected.GET("/status", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{
+				"message": constants.SuccessMessage,
+			})
+		})
+
 		protectedTransferRoutes := protected.Group("/transfer")
 		protectedTransferRoutes.POST("/new", handler.CreateTransferHandler)
 		protectedTransferRoutes.POST("/upload", handler.UploadChunkHandler)

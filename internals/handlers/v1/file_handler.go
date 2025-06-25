@@ -440,6 +440,7 @@ func (h *Handler) TransferDownloaderHandler(c *gin.Context) {
 		})
 		return
 	}
+
 }
 
 func (h *Handler) GetAllTransfersHandler(c *gin.Context) {

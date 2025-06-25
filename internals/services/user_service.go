@@ -7,20 +7,18 @@ import (
 	customerrors "large_fss/internals/customErrors"
 	"large_fss/internals/dto"
 	"large_fss/internals/models"
-
-	"github.com/google/uuid"
 )
 
-func (s *Service) Signup(c context.Context, signupRequest *dto.SignUpDTO) (uuid.UUID, error) {
+func (s *Service) Signup(c context.Context, signupRequest *dto.SignUpDTO) (string, error) {
 	// We check here if the user is already there
 	_, err := s.repo.FindUserByEmail(c, signupRequest.Email)
 
 	if err == nil {
-		return uuid.UUID{}, customerrors.ErrUserAlreadyExists
+		return "", customerrors.ErrUserAlreadyExists
 
 	} else if !errors.Is(err, sql.ErrNoRows) {
 
-		return uuid.UUID{}, err
+		return "", err
 	}
 
 	userModel := models.User{
@@ -32,9 +30,16 @@ func (s *Service) Signup(c context.Context, signupRequest *dto.SignUpDTO) (uuid.
 
 	userId, err := s.repo.CreateUser(c, userModel)
 	if err != nil {
-		return uuid.UUID{}, err
+		return "", err
 	}
-	return userId, nil
+
+	jwt, err := s.JwtService.CreateJWT(userId)
+
+	if err != nil {
+
+		return "", err
+	}
+	return jwt, nil
 
 }
 

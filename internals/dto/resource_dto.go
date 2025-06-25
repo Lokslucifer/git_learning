@@ -41,7 +41,7 @@ type TransferInfoDTO struct {
 	ID           uuid.UUID     `json:"id"`
 	Message      string        `json:"message"`
 	Size         int64         `json:"size"`
-	Expiry       time.Time     `json:"expiry"`
+	Expiry       *time.Time     `json:"expiry"`
 	FileInfoList []FileInfoDTO `json:"file_info_list,omitempty"`
 	CreatedAt   time.Time  `json:"created_at" `
 }

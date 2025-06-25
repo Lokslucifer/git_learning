@@ -11,6 +11,7 @@ import (
 	"large_fss/internals/dto"
 	"large_fss/utils"
 	"path/filepath"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -23,6 +24,9 @@ func (s *Service) GetTransferInfoService(c context.Context, transferID uuid.UUID
 			return nil, customerrors.ErrExpiredLink
 		}
 		return nil, err
+	}
+	if transferData.Expiry != nil && transferData.Expiry.Before(time.Now()) {
+		return nil, customerrors.ErrExpiredLink
 	}
 	filesData, err := s.repo.FindAllFilesByTransferID(c, transferID)
 	if err != nil {
@@ -46,7 +50,7 @@ func (s *Service) GetTransferInfoService(c context.Context, transferID uuid.UUID
 		ID:           transferData.ID,
 		Message:      transferData.Message,
 		Size:         int64(transferData.Size),
-		Expiry:       *transferData.Expiry,
+		Expiry:       transferData.Expiry,
 		FileInfoList: fileInfoList,
 	}
 	return &transferInfo, nil
@@ -61,6 +65,9 @@ func (s *Service) TransferDownloaderService(c *gin.Context, transferID uuid.UUID
 			return nil, "", customerrors.ErrExpiredLink
 		}
 		return nil, "", err
+	}
+	if transferData.Expiry != nil && transferData.Expiry.Before(time.Now()) {
+		return nil, "", customerrors.ErrExpiredLink
 	}
 
 	// Retrieve all files associated with the transfer
@@ -134,6 +141,10 @@ func (s *Service) FileDownloaderService(c *gin.Context, fileID uuid.UUID) (io.Re
 		}
 		return nil, "", err
 	}
+	transferData, err := s.repo.FindTransferByID(c, fileData.TransferID)
+	if err != nil && transferData.Expiry != nil && transferData.Expiry.Before(time.Now()) {
+		return nil, "", customerrors.ErrExpiredLink
+	}
 	reader, err := s.filestorage.ReadFile(c, fileData.FilePath)
 	if err != nil {
 		return nil, "", err
@@ -165,7 +176,7 @@ func (s *Service) GetAllTransfersService(c context.Context, userID uuid.UUID) ([
 	for _, trans := range transferLst {
 		transDTO := dto.TransferInfoDTO{
 			ID:        trans.ID,
-			Expiry:    *trans.Expiry,
+			Expiry:    trans.Expiry,
 			Message:   trans.Message,
 			Size:      trans.Size,
 			CreatedAt: trans.CreatedAt,

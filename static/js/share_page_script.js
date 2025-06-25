@@ -112,19 +112,26 @@ function showContent(transferData) {
     // Update transfer info
     transferIdEl.textContent = transferData.id;
     totalSizeEl.textContent = formatFileSize(transferData.size);
+    const expiry = new Date(transferData.expiry);
+    if(expiry.getTime()==0){
+        expiresAtEl.textContent ="Never";
+
+    }else{
     expiresAtEl.textContent = formatDate(transferData.expiry);
+    }
+    
 
     // Check if expired
-    const now = new Date();
-    const expiry = new Date(transferData.expiry);
-    if (expiry < now) {
-        statusBadge.textContent = 'Expired';
-        statusBadge.className = 'expired-badge';
-        downloadAllBtn.disabled = true;
-        downloadAllBtn.textContent = 'Transfer Expired';
-        downloadAllBtn.style.opacity = '0.5';
-        downloadAllBtn.style.cursor = 'not-allowed';
-    }
+    // const now = new Date();
+   
+    // if (expiry < now) {
+    //     statusBadge.textContent = 'Expired';
+    //     statusBadge.className = 'expired-badge';
+    //     downloadAllBtn.disabled = true;
+    //     downloadAllBtn.textContent = 'Transfer Expired';
+    //     downloadAllBtn.style.opacity = '0.5';
+    //     downloadAllBtn.style.cursor = 'not-allowed';
+    // }
 
     // Show message if exists
     if (transferData.message && transferData.message.trim()) {

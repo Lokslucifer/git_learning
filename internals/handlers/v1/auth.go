@@ -25,7 +25,7 @@ func (h *Handler) SignupHandler(c *gin.Context) {
 		})
 		return
 	}
-	userId, err := h.ser.Signup(c, &signupRequest)
+	userToken, err := h.ser.Signup(c, &signupRequest)
 
 	if err != nil {
 		if errors.Is(err, customerrors.ErrUserAlreadyExists) {
@@ -47,10 +47,17 @@ func (h *Handler) SignupHandler(c *gin.Context) {
 			return
 		}
 	}
-
-	c.JSON(http.StatusCreated, gin.H{
-		"message": constants.SuccessMessage,
-		"ID":      userId,
+	c.SetCookie(
+		"auth_token", // Cookie name
+		userToken,    // Value
+		3600*6,       // MaxAge in seconds (e.g., 1 hour)
+		"/",          // Path
+		"",           // Domain ("" uses the request's domain)
+		true,         // Secure (set to true in production with HTTPS)
+		true,         // HttpOnly (not accessible via JS)
+	)
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Logout successful",
 	})
 
 }
@@ -111,4 +118,20 @@ func (h *Handler) LoginHandler(c *gin.Context) {
 		"Token":   userToken,
 	})
 
+}
+
+func (h *Handler) LogoutHandler(c *gin.Context) {
+	c.SetCookie(
+		"auth_token", // Cookie name
+		"",           // Empty value
+		-1,           // MaxAge < 0 deletes the cookie
+		"/",          // Path must match the original
+		"",           // Domain (empty means current domain)
+		true,         // Secure (true in production)
+		true,         // HttpOnly
+	)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Logout successful",
+	})
 }
