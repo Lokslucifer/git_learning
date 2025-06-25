@@ -22,7 +22,7 @@ import (
 
 func ConnectDB() (*sqlx.DB, error) {
 
-	dsn := constants.DBURL
+	dsn := constants.DBURL()
 	var err error
 	DB, err := sqlx.Connect("postgres", dsn)
 	if err != nil {

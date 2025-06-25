@@ -1,5 +1,6 @@
 
-const BACKEND_BASE = 'http://localhost:8081/api';
+// const BACKEND_BASE = 'http://localhost:8081/api';
+const BACKEND_BASE = `${window.location.protocol}//${window.location.hostname}:8081/api`;
 const ENDPOINTS = {
     NEW_TRANSFER: `${BACKEND_BASE}/auth/transfer/new`,
     UPLOAD_CHUNK: `${BACKEND_BASE}/auth/transfer/upload`,

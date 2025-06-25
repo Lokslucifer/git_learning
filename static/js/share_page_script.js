@@ -1,5 +1,5 @@
 
-const BACKEND_BASE = 'http://localhost:8081/api';
+const BACKEND_BASE = `${window.location.protocol}//${window.location.hostname}:8081/api`;
 
 const SHARE_BACKEND_URL=BACKEND_BASE+"/transfer/share"
 const FILE_DOWNLOAD_BACKEND_URL=BACKEND_BASE+"/transfer/download/file"

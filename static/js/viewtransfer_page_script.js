@@ -2,7 +2,7 @@
 
 
 
-const BACKEND_BASE = 'http://localhost:8081/api';
+const BACKEND_BASE = `${window.location.protocol}//${window.location.hostname}:8081/api`;
 const ENDPOINTS = {
 
     LOGOUT: `${BACKEND_BASE}/logout`,

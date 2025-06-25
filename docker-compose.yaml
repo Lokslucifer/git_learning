@@ -8,21 +8,35 @@ services:
     ports:
       - "5432:5432"
     environment:
+
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: yourpassword
       POSTGRES_DB: wetransfer
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./initdb:/docker-entrypoint-initdb.d  # 👈 Mount init script directory
+      - ./initdb:/docker-entrypoint-initdb.d  # Init script directory
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   app:
     build: .
     container_name: go-app
     ports:
       - "8081:8081"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       PORT: 8081
+      DB_HOST: db
+      DB_USER: postgres
+      DB_PASSWORD: yourpassword
+      DB_NAME: wetransfer
+      DB_PORT: 5432
+    restart: always
 
 volumes:
   pgdata:
