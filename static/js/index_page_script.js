@@ -12,8 +12,7 @@ const ENDPOINTS = {
     AUTH_STATUS: `${BACKEND_BASE}/auth/status`,
 };
 
-// Global state
-let authToken = localStorage.getItem('auth_token');
+
 let isLoginMode = true;
 let selectedFiles = [];
 let totalSize = 0;

@@ -48,13 +48,6 @@ func ConnectAWSClient() *s3.Client {
 func main() {
 
 	r := gin.Default()
-	r.Use(func(c *gin.Context) {
-		c.Header("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate")
-		c.Header("Expires", "0")
-		c.Header("Pragma", "no-cache")
-		c.Header("Surrogate-Control", "no-store")
-		c.Next()
-	})
 	r.Static("/static", "./static")
 	r.LoadHTMLGlob("./templates/*.html")
 	//loading dot env

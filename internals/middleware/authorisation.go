@@ -18,20 +18,17 @@ func  AuthorizationMiddleware(jwtServiceObj *services.JWTService) gin.HandlerFun
 
 		if err != nil || authorization == "" {
 			// If token not found in cookie, check Authorization header
-			authorization = c.GetHeader("auth_token")
+		
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": gin.H{
+					"message": customerrors.ErrMissingToken.Error(),
+				},
+			})
 
-			if len(authorization) == 0 {
-				c.JSON(http.StatusUnauthorized, gin.H{
-					"error": gin.H{
-						"message": customerrors.ErrMissingToken.Error(),
-					},
-				})
-
-				c.Redirect(http.StatusFound, "/") // or "/login"
-				c.Abort()
-				return
-			}
-
+			c.Redirect(http.StatusFound, "/") // or "/login"
+			c.Abort()
+			return
+			
 		}
 		// We will check if the authorization header is valid
 		claims, err := jwtServiceObj.ValidateJWT(authorization)
